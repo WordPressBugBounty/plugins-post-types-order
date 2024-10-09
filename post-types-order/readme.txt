@@ -4,7 +4,7 @@ Donate link: http://www.nsp-code.com/donate.php
 Tags: post order, posts order, post sort, posts sort, post types order
 Requires at least: 2.8
 Tested up to: 6.6.2
-Stable tag: 2.3.1
+Stable tag: 2.3.2
 Requires PHP: 5.6
 License: GPLv2 or later
 
@@ -115,6 +115,9 @@ Consider upgrading to our advanced version of this plugin, which offers these fe
 
 
 == Changelog ==
+
+= 2.3.2 = 
+ - Fix: Change the CPT_VERSION constant to avoid conflict with CPT UI plugin.
 
 = 2.3.1 = 
  - Improve the descriptions in the readme.txt file for better clarity and user understanding.
