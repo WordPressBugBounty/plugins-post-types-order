@@ -169,28 +169,57 @@
                             }
                         }
                         
-                    $current_menu_order =   $post->menu_order;
-                    $options            =   $this->get_options();
-                    
+                    $current_menu_order = $post->menu_order;
+                    $options            = $this->get_options();
+
                     $navigation_sort_revert = (strval($options['navigation_sort_revert']) === "1") ? TRUE : FALSE;
                     $navigation_sort_revert = apply_filters('pto/navigation_sort_revert', $navigation_sort_revert);
-                    
-                    $results = $wpdb->get_results( $wpdb->prepare( "SELECT p.* FROM $wpdb->posts AS p
-                                $_join
-                                WHERE p.post_date < %s  AND p.menu_order = %d AND p.post_type = %s AND p.post_status = 'publish' $_where" ,  $post->post_date, $current_menu_order, $post->post_type) );
-                            
-                    if (count($results) > 0)
-                            {
-                                $where .= $wpdb->prepare( " AND p.menu_order = %d", $current_menu_order );
-                            }
+
+                    if ( $navigation_sort_revert )
+                        {
+                            /*
+                             * Reverted sequence:
+                             * menu_order DESC, post_date ASC
+                             */
+                            $navigation_where = $wpdb->prepare(
+                                "(
+                                    p.menu_order > %d
+                                    OR (
+                                        p.menu_order = %d
+                                        AND p.post_date < %s
+                                    )
+                                )",
+                                $current_menu_order,
+                                $current_menu_order,
+                                $post->post_date
+                            );
+                        }
                         else
-                            {
-                                if ( $navigation_sort_revert )
-                                    $where = str_replace("p.post_date < '". $post->post_date  ."'", "p.menu_order > '$current_menu_order'", $where);
-                                    else
-                                    $where = str_replace("p.post_date < '". $post->post_date  ."'", "p.menu_order < '$current_menu_order'", $where);
-                            }
-                    
+                        {
+                            /*
+                             * Normal sequence:
+                             * menu_order ASC, post_date DESC
+                             */
+                            $navigation_where = $wpdb->prepare(
+                                "(
+                                    p.menu_order < %d
+                                    OR (
+                                        p.menu_order = %d
+                                        AND p.post_date > %s
+                                    )
+                                )",
+                                $current_menu_order,
+                                $current_menu_order,
+                                $post->post_date
+                            );
+                        }
+
+                    $where = str_replace(
+                        "p.post_date < '" . $post->post_date . "'",
+                        $navigation_where,
+                        $where
+                    );
+
                     return $where;
                 }
             
@@ -274,29 +303,65 @@
                             }
                         }
                         
-                    $current_menu_order =   $post->menu_order;
-                    $options            =   $this->get_options();
-                    
+                    $current_menu_order = $post->menu_order;
+                    $options            = $this->get_options();
+
                     $navigation_sort_revert = (strval($options['navigation_sort_revert']) === "1") ? TRUE : FALSE;
                     $navigation_sort_revert = apply_filters('pto/navigation_sort_revert', $navigation_sort_revert);
-                    
-                    //check if there are more posts with lower menu_order
-                    $results = $wpdb->get_results( $wpdb->prepare( "SELECT p.* FROM $wpdb->posts AS p
-                                $_join
-                                WHERE p.post_date > %s AND p.menu_order = %d AND p.post_type = %s AND p.post_status = 'publish' $_where", $post->post_date, $current_menu_order, $post->post_type ) );
-                            
-                    if (count($results) > 0)
-                            {
-                                $where .= $wpdb->prepare(" AND p.menu_order = %d", $current_menu_order );
-                            }
+
+                    if ( $navigation_sort_revert )
+                        {
+                            /*
+                             * Reverted sequence:
+                             * menu_order DESC, post_date ASC
+                             *
+                             * Next item:
+                             * - lower menu_order
+                             * - or same menu_order with a newer post_date
+                             */
+                            $navigation_where = $wpdb->prepare(
+                                "(
+                                    p.menu_order < %d
+                                    OR (
+                                        p.menu_order = %d
+                                        AND p.post_date > %s
+                                    )
+                                )",
+                                $current_menu_order,
+                                $current_menu_order,
+                                $post->post_date
+                            );
+                        }
                         else
-                            {
-                                if ( $navigation_sort_revert )
-                                    $where = str_replace("p.post_date > '". $post->post_date  ."'", "p.menu_order < '$current_menu_order'", $where);
-                                    else
-                                    $where = str_replace("p.post_date > '". $post->post_date  ."'", "p.menu_order > '$current_menu_order'", $where);
-                            }
-                    
+                        {
+                            /*
+                             * Normal sequence:
+                             * menu_order ASC, post_date DESC
+                             *
+                             * Next item:
+                             * - higher menu_order
+                             * - or same menu_order with an older post_date
+                             */
+                            $navigation_where = $wpdb->prepare(
+                                "(
+                                    p.menu_order > %d
+                                    OR (
+                                        p.menu_order = %d
+                                        AND p.post_date < %s
+                                    )
+                                )",
+                                $current_menu_order,
+                                $current_menu_order,
+                                $post->post_date
+                            );
+                        }
+
+                    $where = str_replace(
+                        "p.post_date > '" . $post->post_date . "'",
+                        $navigation_where,
+                        $where
+                    );
+
                     return $where;
                 }
 
