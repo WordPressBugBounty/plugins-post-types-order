@@ -80,6 +80,7 @@
                                             'capability'                        =>  'manage_options',
                                             'edit_view_links'                   =>  '',
                                             'navigation_sort_apply'             =>  1,
+                                            'navigation_sort_revert'            =>  '',
                                             
                                         );
                     $options          = wp_parse_args( $options, $defaults );
@@ -168,7 +169,11 @@
                             }
                         }
                         
-                    $current_menu_order = $post->menu_order;
+                    $current_menu_order =   $post->menu_order;
+                    $options            =   $this->get_options();
+                    
+                    $navigation_sort_revert = (strval($options['navigation_sort_revert']) === "1") ? TRUE : FALSE;
+                    $navigation_sort_revert = apply_filters('pto/navigation_sort_revert', $navigation_sort_revert);
                     
                     $results = $wpdb->get_results( $wpdb->prepare( "SELECT p.* FROM $wpdb->posts AS p
                                 $_join
@@ -180,7 +185,10 @@
                             }
                         else
                             {
-                                $where = str_replace("p.post_date < '". $post->post_date  ."'", "p.menu_order < '$current_menu_order'", $where);  
+                                if ( $navigation_sort_revert )
+                                    $where = str_replace("p.post_date < '". $post->post_date  ."'", "p.menu_order > '$current_menu_order'", $where);
+                                    else
+                                    $where = str_replace("p.post_date < '". $post->post_date  ."'", "p.menu_order < '$current_menu_order'", $where);
                             }
                     
                     return $where;
@@ -196,7 +204,13 @@
                 {
                     global $post, $wpdb;
                     
-                    $sort = 'ORDER BY p.menu_order DESC, p.post_date ASC LIMIT 1';
+                    $options          =     $this->get_options();
+                    
+                    $navigation_sort_revert = (strval($options['navigation_sort_revert']) === "1") ? TRUE : FALSE;
+                    $navigation_sort_revert = apply_filters('pto/navigation_sort_revert', $navigation_sort_revert);
+                    
+                    //$sort = 'ORDER BY p.menu_order DESC, p.post_date ASC LIMIT 1';
+                    $sort = $navigation_sort_revert ? 'ORDER BY p.menu_order ASC, p.post_date DESC LIMIT 1' : 'ORDER BY p.menu_order DESC, p.post_date ASC LIMIT 1';
 
                     return $sort;
                 }
@@ -260,7 +274,11 @@
                             }
                         }
                         
-                    $current_menu_order = $post->menu_order;
+                    $current_menu_order =   $post->menu_order;
+                    $options            =   $this->get_options();
+                    
+                    $navigation_sort_revert = (strval($options['navigation_sort_revert']) === "1") ? TRUE : FALSE;
+                    $navigation_sort_revert = apply_filters('pto/navigation_sort_revert', $navigation_sort_revert);
                     
                     //check if there are more posts with lower menu_order
                     $results = $wpdb->get_results( $wpdb->prepare( "SELECT p.* FROM $wpdb->posts AS p
@@ -273,7 +291,10 @@
                             }
                         else
                             {
-                                $where = str_replace("p.post_date > '". $post->post_date  ."'", "p.menu_order > '$current_menu_order'", $where);  
+                                if ( $navigation_sort_revert )
+                                    $where = str_replace("p.post_date > '". $post->post_date  ."'", "p.menu_order < '$current_menu_order'", $where);
+                                    else
+                                    $where = str_replace("p.post_date > '". $post->post_date  ."'", "p.menu_order > '$current_menu_order'", $where);
                             }
                     
                     return $where;
@@ -289,7 +310,13 @@
                 {
                     global $post, $wpdb; 
                     
-                    $sort = 'ORDER BY p.menu_order ASC, p.post_date DESC LIMIT 1';
+                    $options          =     $this->get_options();
+                    
+                    $navigation_sort_revert = (strval($options['navigation_sort_revert']) === "1") ? TRUE : FALSE;
+                    $navigation_sort_revert = apply_filters('pto/navigation_sort_revert', $navigation_sort_revert);
+                    
+                    //$sort = 'ORDER BY p.menu_order ASC, p.post_date DESC LIMIT 1';
+                    $sort = $navigation_sort_revert ? 'ORDER BY p.menu_order DESC, p.post_date ASC LIMIT 1' : 'ORDER BY p.menu_order ASC, p.post_date DESC LIMIT 1';
                     
                     return $sort;    
                 }
